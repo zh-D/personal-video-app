@@ -6,6 +6,7 @@ const authRoute = require("./routes/auth");
 const userRoute = require("./routes/users");
 const movieRoute = require("./routes/videos");
 const listRoute = require("./routes/lists");
+const path = require("path")
 
 dotenv.config();
 
@@ -20,11 +21,17 @@ mongoose
 
 app.use(express.json());
 
-app.use("/api/auth", authRoute);
-app.use("/api/users", userRoute);
-app.use("/api/videos", movieRoute);
-app.use("/api/lists", listRoute);
+app.use("/auth", authRoute);
+app.use("/users", userRoute);
+app.use("/videos", movieRoute);
+app.use("/lists", listRoute);
 
-app.listen(8001, () => {
+app.use(express.static(path.join(__dirname, "/client/build")));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '/client/build', 'index.html'));
+});
+
+app.listen(process.env.PORT || 8001, () => {
     console.log("Backend server is running!");
 });

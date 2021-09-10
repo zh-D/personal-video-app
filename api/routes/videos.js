@@ -5,47 +5,53 @@ const verify = require("../verifyToken");
 //CREATE
 
 router.post("/", verify, async (req, res) => {
-
-  const newVideo = new Video(req.body);
-  try {
-    const savedVideo = await newVideo.save();
-    res.status(201).json(savedVideo);
-  } catch (err) {
-    res.status(500).json(err);
+  if (req.user.isAdmin) {
+    const newVideo = new Video(req.body);
+    try {
+      const savedVideo = await newVideo.save();
+      res.status(201).json(savedVideo);
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  } else {
+    res.status(403).json("You are not allowed!");
   }
-
 });
 
-//UPDATE
+// //UPDATE
 
 router.put("/:id", verify, async (req, res) => {
-
-  try {
-    const updatedVideo = await Video.findByIdAndUpdate(
-      req.params.id,
-      {
-        $set: req.body,
-      },
-      { new: true }
-    );
-    res.status(200).json(updatedVideo);
-  } catch (err) {
-    res.status(500).json(err);
+  if (req.user.isAdmin) {
+    try {
+      const updatedVideo = await Video.findByIdAndUpdate(
+        req.params.id,
+        {
+          $set: req.body,
+        },
+        { new: true }
+      );
+      res.status(200).json(updatedVideo);
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  } else {
+    res.status(403).json("You are not allowed!");
   }
-
 });
 
-//DELETE
+// //DELETE
 
 router.delete("/:id", verify, async (req, res) => {
-
-  try {
-    await Video.findByIdAndDelete(req.params.id);
-    res.status(200).json("The video has been deleted...");
-  } catch (err) {
-    res.status(500).json(err);
+  if (req.user.isAdmin) {
+    try {
+      await Video.findByIdAndDelete(req.params.id);
+      res.status(200).json("The video has been deleted...");
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  } else {
+    res.status(403).json("You are not allowed!");
   }
-
 });
 
 //GET
@@ -66,7 +72,7 @@ router.get("/random", verify, async (req, res) => {
   let video;
 
   try {
-    if (typeQuery) {
+    if (typeQuery && typeQuery !== "undefined") {
       console.log(typeQuery);
       video = await Video.aggregate([
         { $sample: { size: 10 } },
@@ -90,16 +96,27 @@ router.get("/random", verify, async (req, res) => {
 //GET ALL
 
 router.get("/", verify, async (req, res) => {
-  if (req.user.isAdmin) {
+  // if (req.user.isAdmin) {
+    const { page, size } = req.query
     try {
-      const videos = await Video.find();
-      res.status(200).json(videos.reverse());
+      if (!page || !size) {
+        const videos = await Video.find()
+        res.status(200).json(videos.reverse());
+      } else {
+        const videosCount = await Video.countDocuments()
+        const videos = await Video.aggregate([
+          { $skip: size * (page - 1) },
+          { $limit: +size }
+        ]);
+        res.status(200).json({ count: videosCount, results: videos.reverse() });
+      }
     } catch (err) {
+      console.log(err)
       res.status(500).json(err);
     }
-  } else {
-    res.status(403).json("You are not allowed!");
-  }
+  // } else {
+  //   res.status(403).json("You are not allowed!");
+  // }
 });
 
 module.exports = router;

@@ -1,5 +1,5 @@
-# personal-video-app
+# personal
 
-I deployed my website on "heroku":
+在线访问地址：
 
 https://personal-video-app.herokuapp.com/
